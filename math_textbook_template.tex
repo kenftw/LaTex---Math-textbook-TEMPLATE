@@ -1,0 +1,301 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{hyperref}
+\usepackage{nth}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[title]{appendix}
+\usepackage{textcomp}
+\usepackage{epstopdf}
+\usepackage{adjustbox}
+\usepackage{tabularx, booktabs}
+\usepackage{titling}
+\usepackage{xpatch}
+\usepackage{subcaption}
+\usepackage{hyperref}
+\usepackage{bm}
+\DeclareMathOperator*{\argmin}{argmin}
+\DeclareMathOperator*{\argmax}{argmax}
+\newcommand{\Px}{\mathbb{P}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\logit}{\text{logit}}
+\newcommand{\R}{\mathbb{R}}
+\numberwithin{equation}{subsection}
+\title{Math Textbook Template}
+\author{Author Name}
+\date{February \nth{16}, 2020}
+
+\begin{document}
+
+\maketitle
+\tableofcontents 
+\newpage 
+
+\section{Logistic Regression}
+Logistic Regression is a classification method that can 
+be used to model the probability that some outcome Y belongs to
+a particular category.
+For example, a bank wishes to calculate the probability that a
+client will default (Y prediction) on his/her loan given information on
+the client's current financial situation, such as yearly income (input X).
+
+In this scenario, the possible outcomes are binary (two-level response), 
+either the client defaults or doesn't default 
+over the life of the loan. Instead of trying to model the response
+variable Y directly, we can utilize logistic regression to model 
+the \textit{probability} that Y belongs to either category (default, 
+no default).
+
+The question we are asking in this situation (What is the probability that
+the client will default based on their income?) can be formulated as such:
+\begin{equation}
+\Pr(\textbf{default} = \text{Yes} | \text{Income}) \label{prdefault}
+\end{equation}
+However in practice, a binary outcome such as yes/no can be represented by 1
+or 0 instead (Yes = 1, No = 0) and our problem becomes:
+\begin{equation}
+\Pr(Y = 1 | X)
+\end{equation}
+Where X is the random variable representing income.
+
+In the case of 2-level classification, one can use linear regression to loosely determine
+probabilities.
+
+Let $p(X) = \Pr(Y=1|X)$, then the linear regression model is:
+\begin{equation}
+p(X) = \beta_0 + \beta_1X
+\end{equation}
+However, the linear regression model output has a range below 0 and above 1,
+which makes no sense in the context of probability. 
+
+Since we are trying to model the probability that the response variable falls within a 
+certain category, we need a function whos output is bounded between 0 and 1. That is:
+\begin{equation}
+p(X) \in [0,1]
+\end{equation}
+
+Enter the Sigmoid Function.
+
+\subsection{Sigmoid Function}
+The Sigmoid function $S(x)$ has a distinct 'S' shaped curve - also known as the \textbf{sigmoid curve} -
+which returns a value betwen 0 and 1. Generally it is a differentiable, monotonically increasing 
+function that is defined for all $x \in \R$
+
+There are many functions which satisfy these characteristics but the most commonly known
+sigmoid function is the \textbf{logistic function} defined by the formula:
+\begin{equation}
+S(x) = \frac{1}{1+e^{-x}} = \frac{e^{x}}{e^{x} + 1}
+\end{equation}
+And it looks like: 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width = 9cm ]{Graphs/writeup/sigmoid.png}
+    \caption{The Logistic Function - A Popular Sigmoid Function}
+    \label{fig:sigmoid}
+\end{figure}
+
+Because of these properties ($S(x) \in (\text{0, 1})$, monotonic increasing, differentiable), sigmoid functions
+are often used as \textbf{activation functions} for artificial neurons and are also used
+to as \textbf{cumulative distribution functions} in probability theory.
+
+\subsection{Logistic Regression Cont.}
+We left off on how linear regression can be used for classification, but since the output 
+of the linear model can be above 1 or below 0, we a combination of the linear model and
+the logistic function:
+\begin{equation}
+p(X) = \dfrac{e^{\beta_{0} + \beta_{1}X}}{1 + e^{\beta_{0}+\beta_{1}X}} \label{logistic_func}
+\end{equation}
+Where $\beta_0$ and $\beta_1$ are coefficients to be determined, typically by 
+\textit{maximum likelihood} (Fitting the model).
+
+By manipulating \eqref{logistic_func}, we can obtain:
+\begin{equation}
+\dfrac{p(X)}{1-p(X)} = e^{\beta_{0} + \beta_{1}X} \label{odds}
+\end{equation}
+
+Where the left hand side of \eqref{odds} is called the \textit{odds} and 
+can take on any value greater than zero. Odds close to zero indicate that the 
+probability of the event occuring (in our case, default on a loan) is low. For example if 
+$p(X) = 0.2$ - meaning probability of default is $20\%$ - this implies that the odds are 
+$\frac{0.2}{1-0.2} = \frac{1}{4}$.
+
+On the other hand, high odds imply that the event 
+in question is likely to occur. For example if $p(X) = 0.9$, then the implied odds become 
+$\frac{0.9}{1-0.9} = 9$.
+
+By taking the log of both sides of \eqref{odds}, the model becomes:
+\begin{equation}
+\log\bigg(\frac{p(X)}{1-p(X)}\bigg) = \beta_0 + \beta_{1}X \label{logit}
+\end{equation}
+where the left-hand side of \eqref{logit} is called the \textit{log-likelihood} or \textit{logit}. In this model,
+increasing X by one unit changes the log odds by $\beta_1$. Observe that if $\beta_1$ is positive, then an 
+increasing X would be associated with an increasing $p(X)$. Likewise, if $\beta_1$ is negative, then an
+increasing X would be associated with a decreasing $p(X)$.
+
+\subsection{Logistic Regression - Estimating coefficients}
+As previously stated, the coefficients $\beta_0$ and $\beta_1$ are unknown and
+must be estimated by the training data. 
+
+The basic intuition behind maximum likelihood to fit the logistic regression model is to find
+estimates for $\beta_0$ and $\beta_1$ such that the predicted probability $\hat{p}(x_{i})$
+of default corresponds closely to the observed default status. In other words, we want to find
+$\beta_0$ and $\beta_1$ such that the output is close to 1 for all individuals who did default,
+and the output is cloes to 0 for all individuals who did not. 
+
+\textit{Maximum likelihood} is used to estimate the unknown parameters $\beta_0$ and $\beta_1$ 
+in \eqref{logistic_func}. 
+
+Let $\beta = \{\beta_{0}, \beta_{1}\}$. In a two-class case the log-likelihood (log probability) can be written:
+\begin{equation}
+\ell(\beta) = \sum^{N}_{i = 1}\bigg\{y_i\text{log}p(x_i;\beta) + (1 - y_{i}) \log(1-p(x_{i};\beta))\bigg\} \label{loglikelihood}
+\end{equation}
+where 
+\begin{equation}
+p(x_{i};\beta) = \Pr (G = 1 | X = x_{i}; \beta)
+\end{equation}
+and $x_{i}$ is the datapoint and $\beta$ is the vector of two parameters in this case.
+
+One way to maximize the log-likelihood is to set the derivative of \eqref{loglikelihood} to zero and solve the \textit{score equations}:
+\begin{equation}
+\dfrac{\partial\ell(\beta)}{\partial \beta} = \sum^{N}_{i=1}x_{i}(y_{i}-p(x_{i};\beta)) = 0 \label{score_eqn}
+\end{equation}
+
+To solve the score equation \eqref{score_eqn}, we use the Newton-Raphson algorithm which is used
+to find roots of equations and requires the Hessian matrix (second derivative matrix):
+\begin{equation}
+\dfrac{\partial^{2}\ell(\beta)}{\partial \beta \partial \beta^{T}} = -\sum^{N}_{i=1}x_{i}x^{T}_{i}p(x_{i};\beta)(1-p(x_{i};\beta))
+\end{equation}
+
+Each step of the iteration in the algorithm is defined:
+\begin{equation}
+  \beta^{new} = \beta^{old} - \bigg(\dfrac{\partial^{2}\ell(\beta^{old})}{\partial\beta\partial\beta^{T}}\bigg)^{-1} \dfrac{\partial \ell(\beta^{old})}{\partial\beta}
+\end{equation}
+
+At this stage, its convenient to write the score equation and Hessian matrix in matrix notation.
+
+Let \textbf{y} denote the vector of $y_{i}$ values (vector of the dependent variable taking on
+values 1 or 0), \textbf{X} be the $N \times (p+1)$ matrix of $x_{i}$ values (where each column 
+of \textbf{X} is an input feature), $\textbf{p}$ the vector of fitted probabilities with its 
+i'th element $p(x_{i};\beta^{old})$ and \textbf{W} an $N \times N$ diagonal matrix where the i'th
+diagonal element is $p(x_{i}; \beta^{old})(1-p(x_{i};\beta^{old}))$. 
+
+Now the derivatives become
+\begin{equation}
+  \dfrac{\partial\ell(\beta)}{\partial \beta} = \textbf{X}^{T}(\textbf{y} - \textbf{p})
+\end{equation}
+
+\begin{equation}
+  \dfrac{\partial^{2}\ell(\beta)}{\partial \beta \partial \beta^{T}} = -\textbf{X}^{T}\textbf{WX}
+\end{equation}
+Therefore each iteration for estimating $\beta^{new}$ using the Newton-Raphson algorithm can be 
+approximated by the following: 
+\begin{equation}
+  \label{newtonStep}
+  \begin{split}
+    \beta^{new} & = \beta^{old} + (\textbf{X}^{T}\textbf{WX})^{-1}\textbf{X}^{T}(\textbf{y-p}) \\
+                & = (\textbf{X}^{T}\textbf{WX})^{-1}\textbf{X}^{T}\textbf{W}(\textbf{X}\beta^{old} + \textbf{W}^{-1}(\textbf{y} - \textbf{p})) \\
+                & = (\textbf{X}^{T}\textbf{WX})^{-1}\textbf{X}^{T}\textbf{Wz}
+  \end{split}
+\end{equation}
+The second and third line of \eqref{newtonStep} re-expresses the Newton step as a weighted least 
+squares step, with the response
+\begin{equation}
+  \textbf{z} = \textbf{X} \beta^{old} + \textbf{W}^{-1}(\textbf{y} - \textbf{p})
+\end{equation}
+also known as the \textit{adjusted response}. With each iteration, (more on newton-raphson here)
+
+\pagebreak
+\section{Subset/Feature Selection}
+It is not uncommon to work on a data set with a large number of features, in which some parameters 
+are highly correlated with others.
+This can lead to an \textit{overfitted model}, which is a statistical model that contains more 
+parameters than neccesary. It is possible that one can fit a model to a subset of the features that has
+stronger prediction power (lower predictive error) than a model fitted to the full subset of parameters.
+
+In the case where the number of features is small, say 4 variables, its feasible to fit the model
+to all the possible combinations of variables which in this case, with $N = 4$, is
+\begin{equation}
+  \text{Number of Combinations} = 2^{4} - 1 = 15
+\end{equation}
+where N is the number of variables/parameters.
+
+Since there are only 15 combinations of parameters, its computationally feasible to fit a model to all combinations 
+to determine which subset of parameters will give you the strongest predictive power overall. However, imagine if you
+had 30 features in the data set. Then the number of combinations is:
+\begin{equation}
+  \text{Number of Combinations} = 2^{30} - 1 = 1073741823
+\end{equation} 
+With only 30 features, one must try over a billion combinations of subsets of features to determine the optimal
+subset. Therefore, brute force attempts at finding the optimal subset for fitting the model becomes impractical
+very quickly (as the number of features grows). 
+
+This section will introduce two popular shrinkage methods available for selecting subsets of predictors. Shrinkage methods fit a model with all $n$ predictors using a technique that
+\textit{constrains} or \textit{regularizes} the coefficient estimates towards zero (e.g will shrink
+the coefficients of less important predictors to zero). Therefore, shrinkage methods can help one find the optimal subset
+of $p$ features out of a total set of $N$ features in the data set.
+
+The two best-known shrinkage methods are Ridge Regression and Lasso Regression. 
+
+\subsection{Ridge Regression}
+Ridge regression is similar to the least squares method to fit a linear model, where the sum of squared errors are being
+minimized to determine the coefficients. In ridge regression, the coefficients $\beta_{0}, \beta_{1}, \ldots, \beta_{N}$ 
+are estimated by minimzing a penalty residual sum of squares (RSS)
+\begin{equation}
+  \label{bridge}
+  \hat{\beta}^{\text{ridge}} = \text{RSS} = \argmin_{\beta}\bigg\{\sum^{N}_{i=1}(y_{i} - \beta_{0} - \sum^{p}_{j=1} x_{ij}\beta_{j})^{2} + \lambda \sum^{p}_{j=1} \beta^{2}_{j}   \bigg\}
+\end{equation}
+where $\lambda \geq 0$ is the \textit{tuning parameter}, sometimes reffered to as the \textit{complexity parameter},
+which is to be determined separately. The term $\lambda \sum^{p}_{j=1} \beta^{2}_{j}$ is called the \textit{shrinkage penalty},
+which is small when $\beta_{0}, \beta_{1}, \ldots, \beta_{p}$ are close to zero and therefore has the effect of shrinking
+the estimates of $\beta_{j}$ to towards zero. The tuning parameter $\lambda$ acts as a scalar and controls
+the impact of the penalty term. When $\lambda = 0$, the penalty has no effect and ridge regression will produce a
+least squares estimate similar to OLS in linear regression. As $\lambda \to \infty$, the impact of the shrinkage penalty
+grows and the ridge regression coefficients will approach zero.
+
+%An equivalent way to write the RSS is
+%\begin{equation}
+%  \begin{split}
+%      \hat{\beta}^{\text{ridge}} & = \argmin_{\beta} \sum^{N}_{i=1}\bigg(y_{i} - \beta_{0} - \sum^{p}_{j=1} x_{ij} \beta_{j}\bigg)^{2}\\
+%                                 & \text{subject to } \sum^{p}_{1} \beta^{2}_{j} \leq t
+%  \end{split}
+%\end{equation}
+It is important to note that the ridge solutions are not equivariant under the scale of inputs, and one should
+standardize the inputs before solving \eqref{bridge}, either through \textit{Z-score scaling} or \textit{min-max scaling}.
+
+Equation \eqref{bridge} can be written 
+\begin{equation}
+  \hat{\beta}^{\text{ridge}} = \text{RSS}(\lambda) = (\textbf{y} - \textbf{X})\beta)^{T}(\textbf{y} - \textbf{X}\beta) + \lambda \beta^{T} \beta
+\end{equation}
+Where the solution is 
+\begin{equation}
+  \hat{\beta}^{\text{ridge}} = (\textbf{X}^{T}\textbf{X} + \lambda \textbf{I})^{-1} \textbf{X}^{T}\textbf{y}
+\end{equation}
+Where \textbf{I} is the $p \times p$ identity matrix and input matrix \textbf{X} has $p$ columns instead of $p+1$ columns
+where the extra column is the \textbf{1} vector.
+
+*Picture to be removed*
+\begin{figure}[H]
+  \centering
+  \includegraphics[width = 15cm]{Graphs/writeup/temp.png}
+  \caption{The Logistic Function - A Popular Sigmoid Function}
+  \label{fig:sigmoid}
+\end{figure}
+\subsection{Lasso Regression}
+Lasso Regression.
+Lasso Regression 
+
+\subsection{Latex How to type a proof}
+$$\log \frac{\Pr(G = 1 | X = x)}{\Pr(G = K | X = x)} = \beta_{10} + \beta^{T}_{1}x$$ 
+$$\log \frac{\Pr(G = 2 | X = x)}{\Pr(G = K | X = x)} = \beta_{20} + \beta^{T}_{2}x$$
+
+\newpage
+
+\bibliographystyle{apalike}
+\bibliography{reference}
+
+\end{document}
+ 
